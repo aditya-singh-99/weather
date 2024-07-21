@@ -6,6 +6,7 @@ const grantAccessContainer = document.querySelector(".grant-location-container")
 const searchForm = document.querySelector("[data-searchForm]");
 const loadingScreen = document.querySelector(".loading-container");
 const userInfoContainer = document.querySelector(".user-info-container");
+const errorContainer = document.querySelector(".error-container")
 
 //initially vairables need????
 
@@ -15,12 +16,12 @@ oldTab.classList.add("current-tab");
 getfromSessionStorage();
 
 function switchTab(newTab) {
-    if(newTab != oldTab) {
+    if (newTab != oldTab) {
         oldTab.classList.remove("current-tab");
         oldTab = newTab;
         oldTab.classList.add("current-tab");
 
-        if(!searchForm.classList.contains("active")) {
+        if (!searchForm.classList.contains("active")) {
             //kya search form wala container is invisible, if yes then make it visible
             userInfoContainer.classList.remove("active");
             grantAccessContainer.classList.remove("active");
@@ -50,7 +51,7 @@ searchTab.addEventListener("click", () => {
 //check if cordinates are already present in session storage
 function getfromSessionStorage() {
     const localCoordinates = sessionStorage.getItem("user-coordinates");
-    if(!localCoordinates) {
+    if (!localCoordinates) {
         //agar local coordinates nahi mile
         grantAccessContainer.classList.add("active");
     }
@@ -62,9 +63,10 @@ function getfromSessionStorage() {
 }
 
 async function fetchUserWeatherInfo(coordinates) {
-    const {lat, lon} = coordinates;
+    const { lat, lon } = coordinates;
     // make grantcontainer invisible
     grantAccessContainer.classList.remove("active");
+    errorContainer.classList.remove("active")
     //make loader visible
     loadingScreen.classList.add("active");
 
@@ -72,23 +74,23 @@ async function fetchUserWeatherInfo(coordinates) {
     try {
         const response = await fetch(
             `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-          );
-        const  data = await response.json();
-
+        );
+        const data = await response.json();
+        if (data.cod == '404')
+            throw "error"
         loadingScreen.classList.remove("active");
         userInfoContainer.classList.add("active");
         renderWeatherInfo(data);
     }
-    catch(err) {
+    catch (err) {
         loadingScreen.classList.remove("active");
-        //HW
-
+        errorContainer.classList.add("active")
     }
 
 }
 
 function renderWeatherInfo(weatherInfo) {
-    //fistly, we have to fethc the elements 
+    //fistly, we have to fetch the elements 
 
     const cityName = document.querySelector("[data-cityName]");
     const countryIcon = document.querySelector("[data-countryIcon]");
@@ -113,7 +115,7 @@ function renderWeatherInfo(weatherInfo) {
 }
 
 function getLocation() {
-    if(navigator.geolocation) {
+    if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
     }
     else {
@@ -142,27 +144,31 @@ searchForm.addEventListener("submit", (e) => {
     e.preventDefault();
     let cityName = searchInput.value;
 
-    if(cityName === "")
+    if (cityName === "")
         return;
-    else 
+    else
         fetchSearchWeatherInfo(cityName);
 })
 
 async function fetchSearchWeatherInfo(city) {
     loadingScreen.classList.add("active");
     userInfoContainer.classList.remove("active");
+    errorContainer.classList.remove("active")
     grantAccessContainer.classList.remove("active");
 
     try {
         const response = await fetch(
             `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`
-          );
+        );
         const data = await response.json();
+        if (data.cod == '404')
+            throw "error"
         loadingScreen.classList.remove("active");
         userInfoContainer.classList.add("active");
         renderWeatherInfo(data);
     }
-    catch(err) {
-        //hW
+    catch (err) {
+        loadingScreen.classList.remove("active");
+        errorContainer.classList.add("active")
     }
 }
